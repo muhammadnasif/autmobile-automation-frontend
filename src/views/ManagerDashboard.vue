@@ -3,20 +3,20 @@
     <!-- Header -->
     <div class="flex items-start justify-between">
       <div>
-        <h1 class="section-title">Job Assignment</h1>
-        <p class="section-subtitle">Assign incoming vehicles to supervisors.</p>
+        <h1 class="section-title">{{ locale.t('manager.title') }}</h1>
+        <p class="section-subtitle">{{ locale.t('manager.subtitle') }}</p>
       </div>
       <div class="flex items-center gap-2 text-sm text-slate-400 bg-surface-card border border-surface-border rounded-lg px-3 py-2">
         <span class="pulse-dot" />
-        <span>{{ store.awaitingVehicles.length }} vehicle(s) waiting</span>
+        <span>{{ locale.t('manager.vehiclesWaiting', { count: store.awaitingVehicles.length }) }}</span>
       </div>
     </div>
 
     <!-- Empty state -->
     <div v-if="store.awaitingVehicles.length === 0" class="card flex flex-col items-center justify-center py-16 text-center">
       <div class="text-5xl mb-4">🎉</div>
-      <p class="font-semibold text-slate-300">No Vehicles Awaiting Assignment</p>
-      <p class="text-sm text-slate-500 mt-1">All vehicles have been assigned. Check back soon.</p>
+      <p class="font-semibold text-slate-300">{{ locale.t('manager.noVehiclesAwaiting') }}</p>
+      <p class="text-sm text-slate-500 mt-1">{{ locale.t('manager.allAssigned') }}</p>
     </div>
 
     <!-- Vehicle grid -->
@@ -34,34 +34,34 @@
             </div>
             <div>
               <p class="font-bold text-slate-100 font-mono tracking-widest text-sm">{{ vehicle.licensePlate }}</p>
-              <p class="text-xs text-slate-500">ID: {{ vehicle.id }}</p>
+              <p class="text-xs text-slate-500">{{ locale.t('manager.id') }}: {{ vehicle.id }}</p>
             </div>
           </div>
-          <span v-if="vehicle.isNewCar" class="badge-yellow shrink-0">ON TEST</span>
-          <span v-else class="badge-blue shrink-0">Standard</span>
+          <span v-if="vehicle.isNewCar" class="badge-yellow shrink-0">{{ locale.t('manager.onTest') }}</span>
+          <span v-else class="badge-blue shrink-0">{{ locale.t('manager.standard') }}</span>
         </div>
 
         <!-- Meta -->
         <div class="grid grid-cols-2 gap-2 text-xs">
           <div class="bg-surface rounded-lg p-2.5">
-            <p class="text-slate-500 mb-0.5">Entry Time</p>
+            <p class="text-slate-500 mb-0.5">{{ locale.t('manager.entryTime') }}</p>
             <p class="text-slate-200 font-medium">{{ formatTime(vehicle.entryTime) }}</p>
           </div>
           <div class="bg-surface rounded-lg p-2.5">
-            <p class="text-slate-500 mb-0.5">Photo</p>
-            <p class="text-slate-200 font-medium">{{ vehicle.photo ? '✅ Captured' : '❌ None' }}</p>
+            <p class="text-slate-500 mb-0.5">{{ locale.t('manager.photo') }}</p>
+            <p class="text-slate-200 font-medium">{{ vehicle.photo ? locale.t('manager.captured') : locale.t('manager.none') }}</p>
           </div>
         </div>
 
         <!-- Assign form -->
         <div>
-          <label :for="`supervisor-${vehicle.id}`" class="form-label">Assign Supervisor</label>
+          <label :for="`supervisor-${vehicle.id}`" class="form-label">{{ locale.t('manager.assignSupervisor') }}</label>
           <select
             :id="`supervisor-${vehicle.id}`"
             v-model="selectedSupervisors[vehicle.id]"
             class="form-select"
           >
-            <option value="" disabled>— Select a supervisor —</option>
+            <option value="" disabled>{{ locale.t('manager.selectSupervisor') }}</option>
             <option
               v-for="sup in store.supervisors"
               :key="sup.id"
@@ -79,7 +79,7 @@
         >
           <span v-if="store.loading && assigningId === vehicle.id" class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
           <span v-else>👤</span>
-          Assign &amp; Dispatch
+          {{ locale.t('manager.assignDispatch') }}
         </button>
       </div>
     </div>
@@ -87,17 +87,17 @@
     <!-- All vehicles table (overview) -->
     <div class="card">
       <h2 class="text-sm font-semibold text-slate-300 mb-4 flex items-center gap-2">
-        <span>📊</span> All Vehicles Overview
+        <span>📊</span> {{ locale.t('manager.allVehiclesOverview') }}
       </h2>
       <div class="overflow-x-auto">
         <table class="w-full text-sm">
           <thead>
             <tr class="border-b border-surface-border text-xs text-slate-500 uppercase tracking-wide">
-              <th class="text-left py-2 px-3 font-semibold">ID</th>
-              <th class="text-left py-2 px-3 font-semibold">Plate</th>
-              <th class="text-left py-2 px-3 font-semibold">Supervisor</th>
-              <th class="text-left py-2 px-3 font-semibold">Status</th>
-              <th class="text-left py-2 px-3 font-semibold">Entry</th>
+              <th class="text-left py-2 px-3 font-semibold">{{ locale.t('manager.id') }}</th>
+              <th class="text-left py-2 px-3 font-semibold">{{ locale.t('manager.plate') }}</th>
+              <th class="text-left py-2 px-3 font-semibold">{{ locale.t('manager.supervisor') }}</th>
+              <th class="text-left py-2 px-3 font-semibold">{{ locale.t('manager.status') }}</th>
+              <th class="text-left py-2 px-3 font-semibold">{{ locale.t('manager.entry') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -110,7 +110,7 @@
               <td class="py-3 px-3 font-mono font-bold text-slate-200 tracking-widest">{{ v.licensePlate }}</td>
               <td class="py-3 px-3 text-slate-300">{{ v.assignedSupervisor?.name ?? '—' }}</td>
               <td class="py-3 px-3">
-                <span :class="statusBadge(v.status)">{{ v.status }}</span>
+                <span :class="statusBadge(v.status)">{{ statusLabel(v.status) }}</span>
               </td>
               <td class="py-3 px-3 text-slate-500">{{ formatTime(v.entryTime) }}</td>
             </tr>
@@ -124,8 +124,10 @@
 <script setup>
 import { reactive, ref } from 'vue'
 import { useWorkshopStore } from '../store/workshop.js'
+import { useLocaleStore } from '../store/locale.js'
 
 const store = useWorkshopStore()
+const locale = useLocaleStore()
 const selectedSupervisors = reactive({})
 const assigningId = ref(null)
 
@@ -150,7 +152,18 @@ const STATUS_BADGE_MAP = {
   PendingPayment:     'badge-warning',
   Completed:          'badge-green',
 }
+const STATUS_LABEL_KEYS = {
+  AwaitingAssignment: 'status.awaitingAssignment',
+  InExecution:        'status.inExecution',
+  PendingApproval:    'status.pendingApproval',
+  PendingPayment:     'status.pendingPayment',
+  Completed:          'status.completed',
+}
 function statusBadge(status) {
   return STATUS_BADGE_MAP[status] ?? 'badge-gray'
+}
+function statusLabel(status) {
+  const key = STATUS_LABEL_KEYS[status]
+  return key ? locale.t(key) : status
 }
 </script>

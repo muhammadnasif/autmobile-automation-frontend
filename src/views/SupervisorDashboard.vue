@@ -3,11 +3,11 @@
     <!-- Header -->
     <div class="flex flex-wrap items-start justify-between gap-4">
       <div>
-        <h1 class="section-title">Supervisor Dashboard</h1>
-        <p class="section-subtitle">Manage your active jobs and confirm vehicle exits.</p>
+        <h1 class="section-title">{{ locale.t('supervisor.title') }}</h1>
+        <p class="section-subtitle">{{ locale.t('supervisor.subtitle') }}</p>
       </div>
       <div class="flex items-center gap-3">
-        <label for="sup-selector" class="text-sm text-slate-400 shrink-0">Acting as:</label>
+        <label for="sup-selector" class="text-sm text-slate-400 shrink-0">{{ locale.t('supervisor.actingAs') }}</label>
         <select id="sup-selector" v-model="activeSupervisorId" class="form-select w-48">
           <option v-for="s in store.supervisors" :key="s.id" :value="s.id">{{ s.name }}</option>
         </select>
@@ -19,7 +19,7 @@
       <div v-if="newNotifications.length > 0" class="alert-info">
         <span class="text-xl animate-bounce">🔔</span>
         <div class="flex-1">
-          <p class="font-semibold text-sm">{{ newNotifications.length }} New Job(s) Assigned!</p>
+          <p class="font-semibold text-sm">{{ locale.t('supervisor.newJobsAssigned', { count: newNotifications.length }) }}</p>
           <ul class="mt-1 space-y-0.5">
             <li v-for="n in newNotifications" :key="n.id" class="text-xs opacity-80">
               {{ n.message }}
@@ -27,19 +27,19 @@
           </ul>
         </div>
         <button class="text-xs underline opacity-70 hover:opacity-100 shrink-0" @click="markRead">
-          Dismiss
+          {{ locale.t('supervisor.dismiss') }}
         </button>
       </div>
     </Transition>
 
     <!-- ══ SECTION 1: Active Jobs (InExecution) ══════════════════════════════════ -->
     <div>
-      <h2 class="text-sm font-semibold text-slate-400 uppercase tracking-widest mb-3">Active Jobs</h2>
+      <h2 class="text-sm font-semibold text-slate-400 uppercase tracking-widest mb-3">{{ locale.t('supervisor.activeJobs') }}</h2>
 
       <div v-if="activeJobs.length === 0" class="card flex flex-col items-center justify-center py-12 text-center">
         <div class="text-4xl mb-3">🛠️</div>
-        <p class="font-semibold text-slate-300">No Active Jobs</p>
-        <p class="text-sm text-slate-500 mt-1">Jobs assigned to you will appear here.</p>
+        <p class="font-semibold text-slate-300">{{ locale.t('supervisor.noActiveJobs') }}</p>
+        <p class="text-sm text-slate-500 mt-1">{{ locale.t('supervisor.jobsWillAppear') }}</p>
       </div>
 
       <div v-else class="space-y-4">
@@ -53,35 +53,35 @@
               </div>
               <div>
                 <p class="font-bold text-slate-100 font-mono tracking-widest">{{ vehicle.licensePlate }}</p>
-                <p class="text-xs text-slate-500">{{ vehicle.id }} · Entry: {{ formatTime(vehicle.entryTime) }}</p>
+                <p class="text-xs text-slate-500">{{ vehicle.id }} · {{ locale.t('manager.entry') }}: {{ formatTime(vehicle.entryTime) }}</p>
               </div>
             </div>
             <div class="flex flex-wrap gap-2">
-              <span v-if="vehicle.isNewCar" class="badge-yellow">ON TEST</span>
-              <span class="badge-blue">In Execution</span>
-              <span v-if="vehicle.initialGatepass" class="badge-green">Gatepass Issued</span>
+              <span v-if="vehicle.isNewCar" class="badge-yellow">{{ locale.t('manager.onTest') }}</span>
+              <span class="badge-blue">{{ locale.t('status.inExecution') }}</span>
+              <span v-if="vehicle.initialGatepass" class="badge-green">{{ locale.t('supervisor.gatepassIssued') }}</span>
             </div>
           </div>
 
           <!-- Quotation / Issues form -->
           <div class="bg-surface rounded-xl p-4 space-y-4">
             <div class="flex items-center justify-between">
-              <h3 class="text-sm font-semibold text-slate-200">📋 Job Card / Quotation</h3>
+              <h3 class="text-sm font-semibold text-slate-200">📋 {{ locale.t('supervisor.jobCardQuotation') }}</h3>
               <button class="btn-secondary btn-sm" @click="addIssue(vehicle.id)">
-                <span>➕</span> Add Issue
+                <span>➕</span> {{ locale.t('supervisor.addIssue') }}
               </button>
             </div>
 
             <div v-if="jobForms[vehicle.id]?.issues.length === 0"
               class="text-center py-6 text-slate-500 text-sm border border-dashed border-surface-border rounded-lg">
-              No issues added yet. Click "Add Issue" to begin.
+              {{ locale.t('supervisor.noIssuesYet') }}
             </div>
             <div v-else class="space-y-2">
               <div v-for="(issue, idx) in jobForms[vehicle.id]?.issues" :key="idx" class="flex gap-2 items-start">
                 <div class="flex-1 grid sm:grid-cols-3 gap-2">
-                  <input v-model="issue.description" type="text" :placeholder="`Issue ${idx + 1} description`"
+                  <input v-model="issue.description" type="text" :placeholder="locale.t('supervisor.issueDescription', { n: idx + 1 })"
                     class="form-input sm:col-span-2" />
-                  <input v-model="issue.estimatedCost" type="number" placeholder="Est. cost (BDT)" class="form-input"
+                  <input v-model="issue.estimatedCost" type="number" :placeholder="locale.t('supervisor.estCost')" class="form-input"
                     min="0" />
                 </div>
                 <button class="btn-danger btn-sm mt-0.5 shrink-0" @click="removeIssue(vehicle.id, idx)">🗑️</button>
@@ -92,20 +92,20 @@
             <div v-if="jobForms[vehicle.id]?.issues.length > 0"
               class="flex flex-wrap items-center justify-between gap-3 pt-2">
               <div class="text-sm text-slate-400">
-                Estimated Total:
+                {{ locale.t('supervisor.estimatedTotal') }}
                 <span class="text-slate-100 font-bold ml-1">BDT {{ estimatedTotal(vehicle.id).toLocaleString() }}</span>
               </div>
               <button class="btn-primary btn-sm" @click="saveQuotation(vehicle.id)">
                 <span v-if="savingQuotation === vehicle.id"
                   class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 <span v-else>💾</span>
-                Save Quotation
+                {{ locale.t('supervisor.saveQuotation') }}
               </button>
             </div>
 
             <div v-if="vehicle.quotationAmount > 0" class="flex items-center gap-2 text-emerald-400 text-xs">
               <span>✅</span>
-              <span>Quotation saved – BDT {{ Number(vehicle.quotationAmount).toLocaleString() }}</span>
+              <span>{{ locale.t('supervisor.quotationSaved', { amount: Number(vehicle.quotationAmount).toLocaleString() }) }}</span>
             </div>
           </div>
 
@@ -113,15 +113,15 @@
           <div class="flex flex-wrap gap-3 pt-1">
             <button class="btn-secondary flex-1" :disabled="store.loading" @click="generateGatepass(vehicle.id)">
               <span>📄</span>
-              {{ vehicle.initialGatepass ? `Gatepass: ${vehicle.initialGatepass}` : 'Generate Initial Gatepass' }}
+              {{ vehicle.initialGatepass ? locale.t('supervisor.gatepassLabel', { no: vehicle.initialGatepass }) : locale.t('supervisor.generateInitialGatepass') }}
             </button>
             <button v-if="vehicle.initialGatepass" class="btn-primary btn-sm shrink-0"
               @click="downloadGatepass(vehicle, 'initial')">
-              <span>⬇️</span> Download
+              <span>⬇️</span> {{ locale.t('supervisor.download') }}
             </button>
             <button class="btn-warning flex-1" :disabled="store.loading" @click="markCompleted(vehicle.id)">
               <span>✔️</span>
-              Mark Work as Completed
+              {{ locale.t('supervisor.markWorkCompleted') }}
             </button>
           </div>
         </div>
@@ -133,13 +133,12 @@
       <div class="flex items-center gap-3 mb-4">
         <div class="flex-1 h-px bg-surface-border" />
         <span class="text-xs font-bold text-amber-400 uppercase tracking-widest px-2 shrink-0">
-          📋 DM Approved — Confirm Exit &amp; Release to Cashier
+          📋 {{ locale.t('supervisor.dmApprovedConfirm') }}
         </span>
         <div class="flex-1 h-px bg-surface-border" />
       </div>
       <p class="text-xs text-slate-500 -mt-2 mb-4">
-        The Deputy Manager has approved the final bill. Generate the Exit Gatepass, then release the vehicle to the
-        Cashier for payment collection.
+        {{ locale.t('supervisor.dmApprovedHint') }}
       </p>
 
       <div class="space-y-4">
@@ -153,14 +152,14 @@
               </div>
               <div>
                 <p class="font-bold text-slate-100 font-mono tracking-widest">{{ vehicle.licensePlate }}</p>
-                <p class="text-xs text-slate-500">{{ vehicle.id }} · Entry: {{ formatTime(vehicle.entryTime) }}</p>
+                <p class="text-xs text-slate-500">{{ vehicle.id }} · {{ locale.t('manager.entry') }}: {{ formatTime(vehicle.entryTime) }}</p>
               </div>
             </div>
             <div class="flex flex-wrap gap-2">
-              <span v-if="vehicle.isNewCar" class="badge-yellow">ON TEST</span>
+              <span v-if="vehicle.isNewCar" class="badge-yellow">{{ locale.t('manager.onTest') }}</span>
               <span
                 class="text-xs font-semibold px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                DM Approved
+                {{ locale.t('supervisor.dmApproved') }}
               </span>
             </div>
           </div>
@@ -168,16 +167,16 @@
           <!-- Bill summary -->
           <div class="rounded-xl overflow-hidden border border-amber-500/20">
             <div class="bg-amber-900/20 px-4 py-2.5 border-b border-amber-500/20">
-              <h3 class="text-xs font-semibold text-amber-300 uppercase tracking-wide">Approved Bill Summary</h3>
+              <h3 class="text-xs font-semibold text-amber-300 uppercase tracking-wide">{{ locale.t('supervisor.approvedBillSummary') }}</h3>
             </div>
             <div class="divide-y divide-surface-border">
               <div class="flex justify-between items-center px-4 py-2.5">
-                <span class="text-sm text-slate-400">Quoted Amount</span>
+                <span class="text-sm text-slate-400">{{ locale.t('supervisor.quotedAmount') }}</span>
                 <span class="text-sm font-mono text-slate-300">BDT {{ Number(vehicle.quotationAmount ||
                   0).toLocaleString() }}</span>
               </div>
               <div class="flex justify-between items-center px-4 py-3 bg-amber-900/10">
-                <span class="text-sm font-semibold text-amber-200">Final Approved Bill</span>
+                <span class="text-sm font-semibold text-amber-200">{{ locale.t('supervisor.finalApprovedBill') }}</span>
                 <span class="text-lg font-bold font-mono text-amber-300">
                   BDT {{ Number(vehicle.finalBillAmount || 0).toLocaleString() }}
                 </span>
@@ -189,21 +188,21 @@
           <div class="flex flex-wrap gap-3 pt-1">
             <button class="btn-secondary flex-1" :disabled="store.loading" @click="generateExitPass(vehicle.id)">
               <span>🚪</span>
-              {{ vehicle.exitGatepass ? `Exit Pass: ${vehicle.exitGatepass}` : 'Generate Exit Gatepass' }}
+              {{ vehicle.exitGatepass ? locale.t('supervisor.exitPassLabel', { no: vehicle.exitGatepass }) : locale.t('supervisor.generateExitGatepass') }}
             </button>
             <button v-if="vehicle.exitGatepass" class="btn-primary btn-sm shrink-0"
               @click="downloadGatepass(vehicle, 'exit')">
-              <span>⬇️</span> Download
+              <span>⬇️</span> {{ locale.t('supervisor.download') }}
             </button>
             <button class="btn-success flex-1" :disabled="store.loading || !vehicle.exitGatepass"
-              :title="!vehicle.exitGatepass ? 'Generate Exit Gatepass first' : ''"
+              :title="!vehicle.exitGatepass ? locale.t('supervisor.generateExitFirst') : ''"
               @click="releaseToPayment(vehicle.id)">
               <span>💰</span>
-              Release to Cashier for Payment
+              {{ locale.t('supervisor.releaseToCashier') }}
             </button>
           </div>
           <p v-if="!vehicle.exitGatepass" class="text-xs text-slate-500 text-center -mt-1">
-            ⚠️ Generate the Exit Gatepass before releasing to the Cashier.
+            ⚠️ {{ locale.t('supervisor.generateExitFirst') }}
           </p>
         </div>
       </div>
@@ -215,8 +214,10 @@
 import { ref, reactive, computed, watch } from 'vue'
 import { useWorkshopStore } from '../store/workshop.js'
 import { useGatepass } from '../composables/useGatepass.js'
+import { useLocaleStore } from '../store/locale.js'
 
 const store = useWorkshopStore()
+const locale = useLocaleStore()
 const { downloadGatepass } = useGatepass()
 
 // For demo: pick which supervisor we are
