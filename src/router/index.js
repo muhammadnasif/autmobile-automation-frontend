@@ -6,6 +6,8 @@ import SupervisorDashboard  from '../views/SupervisorDashboard.vue'
 import DeputyManagerView    from '../views/DeputyManagerView.vue'
 import CheckoutExitView     from '../views/CheckoutExitView.vue'
 import VehicleTrackingView  from '../views/VehicleTrackingView.vue'
+import PublicTrackingView   from '../views/PublicTrackingView.vue'
+import StoreKeeperView      from '../views/StoreKeeperView.vue'
 
 const routes = [
   {
@@ -43,10 +45,22 @@ const routes = [
     meta: { title: 'Checkout & Exit', role: 'Cashier', icon: '💳' },
   },
   {
+    path: '/store',
+    name: 'StoreKeeper',
+    component: StoreKeeperView,
+    meta: { title: 'Inventory Management', role: 'Store Keeper', icon: '📦' },
+  },
+  {
     path: '/tracking',
     name: 'VehicleTracking',
     component: VehicleTrackingView,
     meta: { title: 'Vehicle Tracking – Pipeline Overview', role: 'Tracking', icon: '📡' },
+  },
+  {
+    path: '/track/:id',
+    name: 'PublicTracking',
+    component: PublicTrackingView,
+    meta: { title: 'Client Tracking', public: true },
   },
 ]
 

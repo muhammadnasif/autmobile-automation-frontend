@@ -56,22 +56,29 @@
                 <th class="text-left px-4 py-2 font-semibold">{{ locale.t('deputy.hash') }}</th>
                 <th class="text-left px-4 py-2 font-semibold">{{ locale.t('deputy.description') }}</th>
                 <th class="text-right px-4 py-2 font-semibold">{{ locale.t('deputy.estCost') }}</th>
+                <th class="text-right px-4 py-2 font-semibold">Final Cost</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="(issue, idx) in vehicle.issues" :key="idx" class="border-b border-surface-border/50">
                 <td class="px-4 py-2.5 text-slate-500">{{ idx + 1 }}</td>
                 <td class="px-4 py-2.5 text-slate-300">{{ issue.description || '—' }}</td>
-                <td class="px-4 py-2.5 text-right font-mono text-slate-200">
-                  BDT {{ Number(issue.estimatedCost || 0).toLocaleString() }}
+                <td class="px-4 py-2.5 text-right font-mono text-slate-400">
+                  {{ Number(issue.estimatedCost || 0).toLocaleString() }}
+                </td>
+                <td class="px-4 py-2.5 text-right w-32">
+                  <input v-if="itemForms[vehicle.id]" v-model="itemForms[vehicle.id][idx]" type="number" min="0" class="form-input text-right py-1 px-2 text-sm text-emerald-400 font-mono focus:ring-1 focus:ring-emerald-500" />
                 </td>
               </tr>
             </tbody>
             <tfoot>
               <tr class="bg-surface-card/50">
                 <td colspan="2" class="px-4 py-3 text-right font-semibold text-slate-300 text-sm">{{ locale.t('deputy.quotedTotal') }}</td>
-                <td class="px-4 py-3 text-right font-bold text-slate-100 font-mono text-sm">
-                  BDT {{ Number(vehicle.quotationAmount || 0).toLocaleString() }}
+                <td class="px-4 py-3 text-right font-bold text-slate-500 font-mono text-sm">
+                  {{ Number(vehicle.quotationAmount || 0).toLocaleString() }}
+                </td>
+                <td class="px-4 py-3 text-right font-bold text-emerald-400 font-mono text-sm">
+                  {{ Number(itemTotals[vehicle.id] || 0).toLocaleString() }}
                 </td>
               </tr>
             </tfoot>
@@ -128,15 +135,48 @@
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue'
+import { reactive, ref, watch, computed } from 'vue'
 import { useWorkshopStore } from '../store/workshop.js'
 import { useLocaleStore } from '../store/locale.js'
 
 const store = useWorkshopStore()
 const locale = useLocaleStore()
 const billForms = reactive({})
+const itemForms = reactive({})
 const billErrors = reactive({})
 const approvingId = ref(null)
+
+const itemTotals = computed(() => {
+  const totals = {}
+  store.completedPendingApproval.forEach(v => {
+    let sum = 0
+    if (itemForms[v.id]) {
+      sum = Object.values(itemForms[v.id]).reduce((acc, val) => acc + Number(val || 0), 0)
+    }
+    totals[v.id] = sum
+  })
+  return totals
+})
+
+watch(() => store.completedPendingApproval, (jobs) => {
+  jobs.forEach(v => {
+    if (!itemForms[v.id]) {
+      itemForms[v.id] = {}
+      v.issues?.forEach((issue, idx) => {
+        itemForms[v.id][idx] = issue.estimatedCost
+      })
+    }
+    if (billForms[v.id] === undefined) {
+      billForms[v.id] = v.quotationAmount || 0
+    }
+  })
+}, { immediate: true })
+
+watch(itemTotals, (totals) => {
+  Object.keys(totals).forEach(id => {
+    billForms[id] = totals[id]
+  })
+}, { deep: true })
 
 function adjustmentClass(vehicle) {
   const diff = Number(billForms[vehicle.id]) - Number(vehicle.quotationAmount)
@@ -168,6 +208,15 @@ async function approveBill(vehicleId) {
   }
   billErrors[vehicleId] = ''
   approvingId.value = vehicleId
+  
+  // optionally, attach final line item costs to the vehicle object here
+  const v = store.vehicleById(vehicleId)
+  if (v && v.issues && itemForms[vehicleId]) {
+    v.issues.forEach((issue, idx) => {
+      issue.finalCost = Number(itemForms[vehicleId][idx] || 0)
+    })
+  }
+
   await store.approveBill(vehicleId, Number(amount))
   delete billForms[vehicleId]
   approvingId.value = null

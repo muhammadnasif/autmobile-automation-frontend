@@ -67,9 +67,14 @@
           <div class="bg-surface rounded-xl p-4 space-y-4">
             <div class="flex items-center justify-between">
               <h3 class="text-sm font-semibold text-slate-200">📋 {{ locale.t('supervisor.jobCardQuotation') }}</h3>
-              <button class="btn-secondary btn-sm" @click="addIssue(vehicle.id)">
-                <span>➕</span> {{ locale.t('supervisor.addIssue') }}
-              </button>
+              <div class="flex gap-2">
+                <button class="btn-secondary btn-sm" @click="openProductModal(vehicle.id)">
+                  <span>🛒</span> Add Product
+                </button>
+                <button class="btn-secondary btn-sm" @click="addIssue(vehicle.id)">
+                  <span>➕</span> {{ locale.t('supervisor.addIssue') }}
+                </button>
+              </div>
             </div>
 
             <div v-if="jobForms[vehicle.id]?.issues.length === 0"
@@ -207,6 +212,59 @@
         </div>
       </div>
     </div>
+
+    <!-- Product Selection Modal -->
+    <div v-if="productModal.show" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 text-left">
+      <div class="card w-full max-w-md bg-surface border border-surface-border shadow-2xl space-y-4">
+        <h3 class="text-lg font-bold text-slate-100">Add Product to Job</h3>
+        
+        <!-- Product Select -->
+        <div>
+          <label class="form-label">Select Product from Inventory</label>
+          <select v-model="productModal.productId" class="form-select w-full">
+            <option value="">-- Select Product --</option>
+            <option v-for="item in inStockInventory" :key="item.id" :value="item.id">
+              {{ item.name }} (Stock: {{ item.quantity }})
+            </option>
+          </select>
+        </div>
+        
+        <!-- Product Details & Pricing -->
+        <div v-if="selectedProductForModal" class="p-3 bg-surface-card rounded-lg border border-surface-border space-y-3">
+          <div class="flex justify-between items-center text-sm">
+            <span class="text-slate-400">Available Stock:</span>
+            <span class="font-bold font-mono text-brand-400">{{ selectedProductForModal.quantity }}</span>
+          </div>
+          <div class="flex justify-between items-center text-sm">
+            <span class="text-slate-400">Buying Price (Unit):</span>
+            <span class="font-bold font-mono text-amber-400">BDT {{ selectedProductForModal.buyingPrice.toLocaleString() }}</span>
+          </div>
+          
+          <div class="pt-2 border-t border-surface-border grid grid-cols-2 gap-3">
+            <div>
+              <label class="form-label text-xs">Quantity</label>
+              <input v-model="productModal.quantity" type="number" min="1" :max="selectedProductForModal.quantity" class="form-input form-sm w-full" />
+            </div>
+            <div>
+              <label class="form-label text-xs">Selling Price (Unit)</label>
+              <input v-model="productModal.sellingPrice" type="number" :min="selectedProductForModal.buyingPrice" class="form-input form-sm w-full" />
+            </div>
+          </div>
+          <div v-if="productModal.sellingPrice < selectedProductForModal.buyingPrice" class="text-xs text-rose-400 mt-1">
+            Selling price is lower than buying price!
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex gap-3 pt-2">
+          <button class="btn-secondary flex-1" @click="closeProductModal" :disabled="addingProduct">Cancel</button>
+          <button class="btn-primary flex-1" :disabled="!isProductModalValid || addingProduct" @click="confirmAddProduct">
+            <span v-if="addingProduct" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+            Add to Quotation
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -239,6 +297,81 @@ const newNotifications = computed(() =>
     (n) => n.supervisorId === activeSupervisorId.value && !n.read
   )
 )
+
+const inStockInventory = computed(() => store.inventory.filter(i => i.quantity > 0))
+
+// Modal state
+const productModal = reactive({
+  show: false,
+  vehicleId: null,
+  productId: '',
+  quantity: 1,
+  sellingPrice: 0
+})
+
+const selectedProductForModal = computed(() => {
+  if (!productModal.productId) return null
+  return store.inventory.find(i => i.id === productModal.productId)
+})
+
+watch(() => productModal.productId, (newId) => {
+  const p = store.inventory.find(i => i.id === newId)
+  if (p) {
+    productModal.sellingPrice = p.buyingPrice ? Math.round(p.buyingPrice * 1.15) : 0 // Suggest 15% markup
+    productModal.quantity = 1
+  }
+})
+
+const isProductModalValid = computed(() => {
+  const p = selectedProductForModal.value
+  if (!p) return false
+  const q = Number(productModal.quantity)
+  const sp = Number(productModal.sellingPrice)
+  return q > 0 && q <= p.quantity && sp > 0
+})
+
+const addingProduct = ref(false)
+
+function openProductModal(vehicleId) {
+  productModal.vehicleId = vehicleId
+  productModal.productId = ''
+  productModal.quantity = 1
+  productModal.sellingPrice = 0
+  productModal.show = true
+}
+
+function closeProductModal() {
+  productModal.show = false
+  productModal.vehicleId = null
+}
+
+async function confirmAddProduct() {
+  if (!isProductModalValid.value) return
+  addingProduct.value = true
+  
+  const p = selectedProductForModal.value
+  const q = Number(productModal.quantity)
+  const sp = Number(productModal.sellingPrice)
+  
+  // Issue from store
+  await store.issueInventoryItem(p.id, q)
+  
+  // Add to job forms
+  if (!jobForms[productModal.vehicleId]) {
+    jobForms[productModal.vehicleId] = { issues: [] }
+  }
+  
+  jobForms[productModal.vehicleId].issues.push({
+    description: `Product: ${p.name} (x${q})`,
+    estimatedCost: sp * q,
+    productId: p.id,
+    quantity: q,
+    unitPrice: sp
+  })
+  
+  addingProduct.value = false
+  closeProductModal()
+}
 
 // Init form state for any new active jobs
 watch(

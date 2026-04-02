@@ -1,5 +1,5 @@
 <template>
-  <div class="flex h-screen overflow-hidden">
+  <div v-if="!isPublicRoute" class="flex h-screen overflow-hidden">
     <!-- Sidebar -->
     <aside class="w-64 shrink-0 bg-surface-card border-r border-surface-border flex flex-col">
       <!-- Logo -->
@@ -132,11 +132,13 @@
         </div>
       </header>
 
-      <!-- Page -->
-      <div class="flex-1 overflow-y-auto p-6">
+      <div v-if="!isPublicRoute" class="flex-1 overflow-y-auto p-6">
         <RouterView />
       </div>
     </main>
+  </div>
+  <div v-else class="h-screen w-screen overflow-y-auto bg-surface p-4 sm:p-6 lg:p-8">
+    <RouterView />
   </div>
 </template>
 
@@ -172,7 +174,7 @@ onMounted(() => {
 })
 
 // Role-based dashboards (shown under "Dashboards" section)
-const TOOL_NAMES = ['VehicleTracking']
+const TOOL_NAMES = ['VehicleTracking', 'StoreKeeper']
 const roleDashboards = computed(() =>
   router.getRoutes().filter((r) => r.meta?.role && !TOOL_NAMES.includes(r.name))
 )
@@ -182,6 +184,7 @@ const toolRoutes = computed(() =>
 )
 
 const currentRoute = computed(() => route)
+const isPublicRoute = computed(() => route.meta?.public === true)
 
 const isActive = (path) => route.path === path
 

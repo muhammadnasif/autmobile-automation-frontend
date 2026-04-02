@@ -42,12 +42,17 @@ export const useWorkshopStore = defineStore('workshop', {
         exitGatepass: null,
         receiptNo: null,
         entryTime: new Date().toISOString(),
+        isDeparted: false,
       },
     ],
     supervisors: [
       { id: 'S-01', name: 'Ahmed Raza' },
       { id: 'S-02', name: 'Bilal Hassan' },
       { id: 'S-03', name: 'Kamran Iqbal' },
+    ],
+    inventory: [
+      { id: 'INV-100', name: 'Engine Oil (5W-30)', quantity: 50, buyingPrice: 2500 },
+      { id: 'INV-101', name: 'Brake Pads (Front)', quantity: 20, buyingPrice: 4500 },
     ],
     notifications: [], // { id, vehicleId, message, read }
     loading: false,
@@ -93,6 +98,10 @@ export const useWorkshopStore = defineStore('workshop', {
           v.assignedSupervisor?.id === supervisorId &&
           v.status === STATUS.AWAITING_EXIT_CONFIRMATION
       ),
+
+    // Vehicles with active gatepasses for Security Guard
+    activeGatepassVehicles: (state) =>
+      state.vehicles.filter((v) => !v.isDeparted && (v.initialGatepass || v.exitGatepass)),
   },
 
   actions: {
@@ -115,6 +124,7 @@ export const useWorkshopStore = defineStore('workshop', {
           exitGatepass: null,
           receiptNo: null,
           entryTime: new Date().toISOString(),
+          isDeparted: false,
         }
         await api.logVehicle(vehicle)
         this.vehicles.push(vehicle)
@@ -122,6 +132,53 @@ export const useWorkshopStore = defineStore('workshop', {
       } finally {
         this.loading = false
       }
+    },
+
+    // ── Security Guard ──────────────────────────────────────────────────────
+    async verifyGatepass(vehicleId) {
+      this.loading = true
+      try {
+        await new Promise((r) => setTimeout(r, 600)) // simulate API call
+        const v = this._findVehicle(vehicleId)
+        // Check off the gatepass by marking the departure/cleared state
+        v.isDeparted = true
+      } finally {
+        this.loading = false
+      }
+    },
+
+    // ── Store Keeper ────────────────────────────────────────────────────────
+    async addInventoryItem(item) {
+      this.loading = true
+      await new Promise((r) => setTimeout(r, 400))
+      // item has { name, quantity, buyingPrice }
+      const newId = `INV-${Date.now().toString().slice(-4)}`
+      this.inventory.push({
+        id: newId,
+        name: item.name,
+        quantity: Number(item.quantity) || 0,
+        buyingPrice: Number(item.buyingPrice) || 0,
+      })
+      this.loading = false
+    },
+    async issueInventoryItem(id, quantity) {
+      this.loading = true
+      await new Promise((r) => setTimeout(r, 400))
+      const item = this.inventory.find(i => i.id === id)
+      if (item) {
+        item.quantity -= (Number(quantity) || 0)
+        if (item.quantity < 0) item.quantity = 0
+      }
+      this.loading = false
+    },
+    async updateInventoryItemQuantity(id, addedQuantity) {
+      this.loading = true
+      await new Promise((r) => setTimeout(r, 400))
+      const item = this.inventory.find(i => i.id === id)
+      if (item) {
+        item.quantity += (Number(addedQuantity) || 0)
+      }
+      this.loading = false
     },
 
     // ── Manager ──────────────────────────────────────────────────────────────

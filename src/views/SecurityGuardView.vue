@@ -137,6 +137,37 @@
       <span v-else>🖨️</span>
       {{ locale.t('security.generateEntryProof') }}
     </button>
+
+    <!-- ══ SECTION: Active Gatepasses (Departures/Tests) ══ -->
+    <div class="pt-6 border-t border-surface-border">
+      <h2 class="text-sm font-semibold text-slate-300 flex items-center gap-2 mb-4">
+        <span>📄</span> Pending Gatepasses
+      </h2>
+      <div v-if="store.activeGatepassVehicles.length === 0" class="card py-8 text-center text-slate-500 text-sm">
+        No pending gatepasses to verify.
+      </div>
+      <div v-else class="space-y-4">
+        <div v-for="vehicle in store.activeGatepassVehicles" :key="vehicle.id" class="card border-l-4 border-l-brand-500 flex flex-col gap-3">
+          <div class="flex items-start justify-between">
+            <div>
+              <p class="font-bold text-slate-100 font-mono tracking-widest">{{ vehicle.licensePlate }}</p>
+              <p class="text-xs text-slate-500">{{ vehicle.id }}</p>
+            </div>
+            <div class="flex flex-col gap-1 items-end">
+              <span v-if="vehicle.initialGatepass" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                Initial: {{ vehicle.initialGatepass }}
+              </span>
+              <span v-if="vehicle.exitGatepass" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                Exit: {{ vehicle.exitGatepass }}
+              </span>
+            </div>
+          </div>
+          <button class="btn-primary btn-sm w-full" @click="store.verifyGatepass(vehicle.id)" :disabled="store.loading">
+            <span>✅</span> Verify Gatepass & Clear
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
