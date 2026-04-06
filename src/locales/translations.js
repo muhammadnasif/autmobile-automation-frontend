@@ -9,7 +9,7 @@ export const translations = {
     'app.managementSystem': 'Management System',
     'app.dashboards': 'Dashboards',
     'app.tools': 'Tools',
-    'app.adminDemo': 'Admin / Demo',
+    'app.adminDemo': 'Admin / Demo (v3)',
     'app.allRolesActive': 'All roles active',
     'app.liveDemoMode': 'Live Demo Mode',
     'app.english': 'English',
