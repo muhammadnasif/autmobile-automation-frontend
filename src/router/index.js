@@ -57,6 +57,10 @@ const routes = [
     meta: { title: 'Vehicle Tracking – Pipeline Overview', role: 'Tracking', icon: '📡' },
   },
   {
+    path: '/tracking/:id',
+    redirect: (to) => ({ name: 'PublicTracking', params: { id: to.params.id } }),
+  },
+  {
     path: '/track/:id',
     name: 'PublicTracking',
     component: PublicTrackingView,

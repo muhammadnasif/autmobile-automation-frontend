@@ -421,6 +421,13 @@ async function generateGatepass(vehicleId) {
 }
 
 async function markCompleted(vehicleId) {
+  // Auto-save quotation before marking work as completed
+  // so Deputy Manager always receives issues + amounts
+  const issues = jobForms[vehicleId]?.issues ?? []
+  const total = estimatedTotal(vehicleId)
+  if (issues.length > 0) {
+    await store.createQuotation(vehicleId, issues, total)
+  }
   await store.markWorkCompleted(vehicleId)
 }
 

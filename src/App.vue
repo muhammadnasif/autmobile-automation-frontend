@@ -189,4 +189,10 @@ const isPublicRoute = computed(() => route.meta?.public === true)
 const isActive = (path) => route.path === path
 
 const unreadCount = computed(() => store.unreadNotifications.length)
+
+function confirmReset() {
+  if (window.confirm('Are you sure you want to reset all data to the initial state? This action cannot be undone.')) {
+    store.resetAll()
+  }
+}
 </script>

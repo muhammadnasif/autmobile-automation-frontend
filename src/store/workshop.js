@@ -208,7 +208,7 @@ export const useWorkshopStore = defineStore('workshop', {
       try {
         await api.createQuotation({ vehicleId, issues, quotationAmount })
         const v = this._findVehicle(vehicleId)
-        v.issues = issues
+        v.issues = issues.map(i => ({ ...i }))
         v.quotationAmount = quotationAmount
       } finally {
         this.loading = false
@@ -299,6 +299,43 @@ export const useWorkshopStore = defineStore('workshop', {
       const v = this.vehicles.find((v) => v.id === id)
       if (!v) throw new Error(`Vehicle ${id} not found`)
       return v
+    },
+
+    /** Reset all store data to the initial demo state. */
+    resetAll() {
+      _idCounter = 1000
+      this.$patch({
+        vehicles: [
+          {
+            id: 'V-0001',
+            licensePlate: 'ABC-1234',
+            isNewCar: false,
+            status: STATUS.AWAITING_ASSIGNMENT,
+            assignedSupervisor: null,
+            photo: null,
+            issues: [],
+            quotationAmount: null,
+            finalBillAmount: null,
+            initialGatepass: null,
+            exitGatepass: null,
+            receiptNo: null,
+            entryTime: new Date().toISOString(),
+            isDeparted: false,
+          },
+        ],
+        supervisors: [
+          { id: 'S-01', name: 'Ahmed Raza' },
+          { id: 'S-02', name: 'Bilal Hassan' },
+          { id: 'S-03', name: 'Kamran Iqbal' },
+        ],
+        inventory: [
+          { id: 'INV-100', name: 'Engine Oil (5W-30)', quantity: 50, buyingPrice: 2500 },
+          { id: 'INV-101', name: 'Brake Pads (Front)', quantity: 20, buyingPrice: 4500 },
+        ],
+        notifications: [],
+        loading: false,
+        error: null,
+      })
     },
   },
 })

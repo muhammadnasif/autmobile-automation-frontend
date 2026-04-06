@@ -116,7 +116,14 @@ const route = useRoute()
 const store = useWorkshopStore()
 
 const queryId = computed(() => route.params.id || '')
-const vehicle = ref(null)
+
+// Reactively look up the vehicle from the store so cross-tab sync updates arrive in real-time
+const vehicle = computed(() => {
+  const q = queryId.value.trim().toLowerCase()
+  if (!q) return null
+  return store.vehicles.find(v => v.id.toLowerCase() === q || v.licensePlate.toLowerCase() === q) || null
+})
+
 const loading = ref(true)
 
 const STAGES = [
@@ -143,11 +150,8 @@ function currentStage(status) {
 }
 
 onMounted(() => {
-  // Simulate fetch
+  // Brief loading simulation, then let computed reactivity take over
   setTimeout(() => {
-    const q = queryId.value.trim().toLowerCase()
-    const found = store.vehicles.find(v => v.id.toLowerCase() === q || v.licensePlate.toLowerCase() === q)
-    vehicle.value = found || null
     loading.value = false
   }, 600)
 })
